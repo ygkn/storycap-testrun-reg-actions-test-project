@@ -1,0 +1,40 @@
+name: Storybook Tests
+on:
+  push: ~
+  pull_request: ~
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - run: npm ci
+
+      # 実際に動かす場合は ~/.cache/ms-playwright をキャッシュする
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      # msw を使っている場合は、ここで npx msw init を実行する
+
+      - name: Build Storybook
+        run: npm run build-storybook
+
+      - name: Serve Storybook and run tests
+        run: |
+          npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+            "npx http-server storybook-static --port 6006 --silent" \
+            "npx wait-on tcp:6006 && npm run test-storybook"
+
+      - uses: reg-viz/reg-actions@v2
+        with:
+          threshold-rate: 0.001
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          image-directory-path: __screenshots__
