@@ -1,6 +1,8 @@
 name: Storybook Tests
 on:
-  push: ~
+  push:
+    branches:
+      - main
   pull_request: ~
 jobs:
   test:
