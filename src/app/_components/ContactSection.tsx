@@ -11,7 +11,7 @@ export const ContactSection: FC = () => (
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
             Ready to Take Your Business to the Next Level?
           </h2>
-          <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+          <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed mx-auto">
             Sign up for a free trial and experience the power of our SaaS
             platform today.
           </p>
