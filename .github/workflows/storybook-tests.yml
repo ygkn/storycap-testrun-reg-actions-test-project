@@ -6,6 +6,8 @@ on:
   pull_request: ~
 jobs:
   test:
+    env:
+      GH_TOKEN: ${{ github.token }}
     timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:
@@ -35,8 +37,56 @@ jobs:
             "npx http-server storybook-static --port 6006 --silent" \
             "npx wait-on tcp:6006 && npm run test-storybook"
 
+      - name: Get custom-report-page
+        id: get-custom-report-page
+        # リポジトリ名が owner/repo の形式でしか取得できないので、bash の文字列置換で取得する
+        run: |
+          echo "::set-output name=custom-report-page::https://${{ github.repository_owner }}.github.io/$(echo ${{ github.repository }} | cut -d '/' -f 2)/run_${{ github.run_id }}/report.html"
+
+
       - uses: reg-viz/reg-actions@v2
         with:
           threshold-rate: 0.001
           github-token: "${{ secrets.GITHUB_TOKEN }}"
           image-directory-path: __screenshots__
+          report-file-path: report
+          custom-report-page: ${{ steps.get-custom-report-page.outputs.custom-report-page }}
+
+
+      - uses: actions/checkout@v4
+        with:
+          path: tmp
+
+      - run: |
+          pushd ./tmp
+
+          git config user.name ${{ github.actor }}
+          git config user.email ${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com
+
+          if git fetch origin reg_actions_report; then
+            git checkout reg_actions_report
+          else
+            git checkout --orphan reg_actions_report
+            git reset
+            git clean -dfx
+          fi
+
+          :> .nojekyll
+
+          git add .nojekyll
+
+          find . -maxdepth 1 -type d -name "run_*" -mtime +30 -exec git rm -rf {} \;
+
+          git rm -rf run_${{ github.run_id }} || true
+
+          cp -r ../__reg__ run_${{ github.run_id }}
+
+          git add run_${{ github.run_id }}
+
+          git commit -m "Add report for run ${{ github.run_id }}"
+
+          git push origin reg_actions_report
+
+          popd
+
+
