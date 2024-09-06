@@ -53,6 +53,8 @@ jobs:
           custom-report-page: ${{ steps.get-custom-report-page.outputs.custom-report-page }}
 
 
+      # GitHub Pages にデプロイするため、別ディレクトリにリポジトリを clone する
+      # actions/checkout を使わずに git clone すると、push ができない
       - uses: actions/checkout@v4
         with:
           path: tmp
@@ -63,22 +65,30 @@ jobs:
           git config user.name ${{ github.actor }}
           git config user.email ${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com
 
+          # リモートに reg_actions_report ブランチが存在する場合は、checkout する
           if git fetch origin reg_actions_report; then
             git checkout reg_actions_report
           else
+            # リモートに reg_actions_report ブランチが存在しない場合は、orphan ブランチを作成する
             git checkout --orphan reg_actions_report
+            # orphan ブランチを作成した場合は、checkout前のファイルが残っているため、削除する
             git reset
             git clean -dfx
           fi
 
+          # .nojekyll ファイルが無いと GitHub Pages で `_` から始まるディレクトリが404になる
           :> .nojekyll
 
           git add .nojekyll
 
+          # 30日以上前のディレクトリを削除する
           find . -maxdepth 1 -type d -name "run_*" -mtime +30 -exec git rm -rf {} \;
 
+          # re-run された場合など、同じ run_id のディレクトリが存在する場合は削除する
           git rm -rf run_${{ github.run_id }} || true
 
+          # 実行結果は、__reg__ ディレクトリに保存されている
+          #
           cp -r ../__reg__ run_${{ github.run_id }}
 
           git add run_${{ github.run_id }}
