@@ -45,7 +45,7 @@ const config: TestRunnerConfig = {
 
       await screenshot(page, context, {
         output: {
-          file: path.join("[title]", `[name]_${viewportName}.png`),
+          file: path.join("[title]", "[name]", `${viewportName}.png`),
         },
       });
     }
